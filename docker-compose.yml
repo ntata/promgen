@@ -10,9 +10,9 @@ services:
     command: sh -c "promgen migrate && promgen register docker-demo localhost 9090"
     external_links:
       - mysql
-      - redis
+      - rabbitmq
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: amqp://guest@rabbitmq:5672//
       DATABASE_URL: mysql://promgen:promgen@mysql:3306/pypromgen
       SECRET_KEY: asdf
 
@@ -21,6 +21,10 @@ services:
     command: promgen runserver 0.0.0.0:8000
     ports:
       - "8080:8000"
+    links:
+      - prometheus
+      - alertmanager
+      - blackbox
     environment:
       DEBUG: 1
 
@@ -31,6 +35,19 @@ services:
       - prometheus
     volumes:
       - ./docker:/etc/prometheus
+    environment:
+      DEBUG: 1
+
+  ecr-exporter-test:
+    image: ecr-exporter:latest
+    command: python ecr_exporter.py
+    network_mode: bridge
+    ports:
+      - "9105:9105"
+    environment:
+      AWS_ACCESS_KEY_ID: ***REMOVED***
+      AWS_SECRET_ACCESS_KEY: ***REMOVED***
+      AWS_DEFAULT_REGION: ***REMOVED***
 
   prometheus:
     image: prom/prometheus
@@ -38,6 +55,7 @@ services:
     links:
       - alertmanager
       - blackbox
+      - ecr-exporter-test
     ports:
       - "9090:9090"
     volumes:
@@ -53,8 +71,6 @@ services:
     image: prom/alertmanager
     command: -config.file=/etc/prometheus/alertmanager.yml
     network_mode: bridge
-    links:
-      - web
     ports:
       - "9093:9093"
     volumes:
