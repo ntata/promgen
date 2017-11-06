@@ -44,12 +44,6 @@ services:
     network_mode: bridge
     ports:
       - "9105:9105"
-    environment:
-      AWS_ACCESS_KEY_ID: ***REMOVED***
-      AWS_SECRET_ACCESS_KEY: ***REMOVED***
-      AWS_DEFAULT_REGION: ***REMOVED***
-
-  prometheus:
     image: prom/prometheus
     network_mode: bridge
     links:
